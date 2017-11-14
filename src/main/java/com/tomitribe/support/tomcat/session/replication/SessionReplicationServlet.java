@@ -18,6 +18,7 @@ public class SessionReplicationServlet extends HttpServlet {
         final Object data = session.getAttribute("data");
         if (data != null) {
             ((Data) data).incrementCounter();
+            session.setAttribute("data", data);
         } else {
             session.setAttribute("data", new Data());
         } 
