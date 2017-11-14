@@ -94,4 +94,4 @@ is not executed.
 
 #### Serialization
 
-All objects stored in the Session must be `Serializable`.________
+All objects stored in the Session must be `Serializable`.
