@@ -18,6 +18,26 @@ And to stop it:
 docker-compose down
 ```
 
+## Try it
+
+The sample application should be running in `http://localhost:8081/session-replication/` and `http://localhost:8082/session-replication/`.
+
+If you access both addresses you should see the Session ID and a counter that increases each time a hit is executed in 
+any of the nodes. Now you can try to stop one of the nodes with:
+
+```bash
+docker stop tomcat-node-1
+```
+
+Now if you hit the node 2 a couple of times in `http://localhost:8082/session-replication/` and then start node 1 again:
+
+```bash
+docker start tomcat-node-1
+```
+
+And access `http://localhost:8082/session-replication/`, you should see that the counter is updated with Session data 
+from node 2.
+
 ## Configuration
 
 ### server.xml
@@ -74,4 +94,4 @@ is not executed.
 
 #### Serialization
 
-All objects stored in the Session must be `Serializable`.
+All objects stored in the Session must be `Serializable`.________
