@@ -66,6 +66,45 @@ Try accessing `http://localhost:8080/` again and the Load Balancer should send t
 
 ## Configuration
 
+### Httpd
+
+#### httpd.conf
+
+Considering a fresh install of `httpd`, the following modules of `httpd` need to be activated in the `conf\httpd.conf` 
+file:
+
+* `LoadModule proxy_module modules/mod_proxy.so`
+* `LoadModule proxy_http_module modules/mod_proxy_http.so`
+* `LoadModule proxy_balancer_module modules/mod_proxy_balancer.so`
+* `LoadModule lbmethod_byrequests_module modules/mod_lbmethod_byrequests.so`
+* `LoadModule slotmem_shm_module modules/mod_slotmem_shm.so`
+
+Then add the following configuration into `conf\httpd.conf` (or in a new conf file included in `conf\httpd.conf`):
+
+```
+<Proxy balancer://tomcat>
+    BalancerMember http://tomcat-node-1:8080 route=node1 ping=500ms
+    BalancerMember http://tomcat-node-2:8080 route=node2 ping=500ms
+</Proxy>
+
+ProxyPass /session-replication balancer://tomcat/session-replication/ stickysession=JSESSIONID
+ProxyPassReverse /session-replication balancer://tomcat/session-replication/ stickysession=JSESSIONID
+
+<Location "/balancer-manager">
+    SetHandler balancer-manager
+</Location>
+```
+
+#### Sticky Sessions
+
+Sticky Session are advisable to use with the Delta Tomcat Session Replication for the following reasons:
+
+* If a browser is issuing parallel requests, these may be handled by different nodes in the cluster and changes to the 
+session might not be visible across all nodes.
+* Without Sticky Sessions the replication would require a synchronous approach to ensure that all other nodes in the 
+cluster have the session updates before the next request.
+* For Debugging purposes, it would be harder to determine what went wrong if each request goes to a different node.
+
 ### Tomcat
 
 #### server.xml
@@ -81,8 +120,6 @@ the value can be set using a System Property when starting up the Tomcat instanc
 
 Then `${load-balancer.route}` can be set into an environment variable `CATALINA_OPTS=-Dload-balancer.route=node1`. 
 Tomcat will automatically read this environment variable and perform property replacement in the `server.xml`.
-
- 
 
 Add the following XML fragment into `conf/server.xml` inside the `Engine` element:
 
