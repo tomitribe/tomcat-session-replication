@@ -24,6 +24,10 @@ And to stop it:
 docker-compose down
 ```
 
+### Race Conditions
+Sometimes the sample might not work properly since both Tomcat instances run at the same time and they don't wait for 
+each other when establishing the Cluster. If this is the case, run the sample again.
+
 ## Try it
 
 ### Tomcat
@@ -227,6 +231,90 @@ is not executed.
 #### Serialization
 
 All objects stored in the Session must be `Serializable`.
+
+## Step by Step
+
+### Scenario 1
+
+Consider the following Scenario:
+
+1. Tomcat **A** and **B** starts up and form a Cluster
+2. Tomcat **A** receives and serves a request with Session **S1**
+3. Tomcat **A** receives and serves another request for Session **S1**
+4. Tomcat **A** crashes
+5. Tomcat **B** receives and serves a request for Session **S1**
+6. Tomcat **A** starts up again
+7. Tomcat **B** crashes
+8. Tomcat **A** receives and serves a request for Session **S1**
+
+#### Step 1
+Nothing out of the ordinary, both Tomcat nodes start up and form a Cluster.
+
+#### Step 2
+Tomcat **A** receives a request and creates Session **S1**:
+
+```
+tomcat-node-1    | FINE: Manager [localhost#/session-replication] send new session (4CF1497FA5FEB5CD187F0FF21A3769B8.node1)
+tomcat-node-1    | FINE: Created a DeltaSession with Id [4CF1497FA5FEB5CD187F0FF21A3769B8.node1] Total count=1
+```
+
+And Tomcat **B** receives it:
+
+```
+tomcat-node-2    | FINE: Assuming clocks are synched: Replication for 4CF1497FA5FEB5CD187F0FF21A3769B8.node1-1510773649191 took=14 ms.
+```
+#### Step 3
+
+When the Session changes in Tomcat **A** it sends a Delta Request to the Cluster:
+
+```
+tomcat-node-1    | FINE: Manager [localhost#/session-replication]: create session message [A97DD384040BD3557F9F17182868A45A.node1] delta request.
+```
+
+And Tomcat **B** receives it:
+
+```
+tomcat-node-2    | FINE: Assuming clocks are synched: Replication for A97DD384040BD3557F9F17182868A45A.node1-1510773759604 took=6 ms.
+tomcat-node-2    | FINE: Manager [localhost#/session-replication]: received session [A97DD384040BD3557F9F17182868A45A.node1] delta.
+```
+
+#### Step 4
+Tomcat **A** crashes the cluster continues as normal.
+
+#### Step 5
+A new request for Session **S1** is made and this time Tomcat **B** needs to process it. It detects the failover and 
+renames the Session to use the Tomcat **B** route:
+
+````
+tomcat-node-2    | FINE: Detected a failover with different jvmRoute - orginal route: [node1] new one: [node2] at session id [A97DD384040BD3557F9F17182868A45A.node1]
+tomcat-node-2    | FINE: Set Orginal Session id at request attribute org.apache.catalina.ha.session.JvmRouteOrignalSessionID value: A97DD384040BD3557F9F17182868A45A.node1
+tomcat-node-2    | FINE: Changed session from [A97DD384040BD3557F9F17182868A45A.node1] to [A97DD384040BD3557F9F17182868A45A.node2]
+````
+
+#### Step 6
+Tomcat **A** starts up again. It request the current Session state before serving any request from the Cluster:
+
+```
+tomcat-node-1    | INFO: Manager [localhost#/session-replication], requesting session state from org.apache.catalina.tribes.membership.MemberImpl[tcp://{172, 18, 0, 3}:4000,{172, 18, 0, 3},4000, alive=424292, securePort=-1, UDP Port=-1, id={87 34 -54 -91 81 34 69 -16 -90 34 -122 24 84 -84 -128 -48 }, payload={}, command={}, domain={}, ]. This operation will timeout if no session state has been received within 60 seconds.
+tomcat-node-2    | FINE: Assuming clocks are synched: Replication for GET-ALL-localhost#/session-replication took=24 ms.
+tomcat-node-2    | FINE: Manager [localhost#/session-replication]: Received SessionMessage of type=(SESSION-GET-ALL) from [org.apache.catalina.tribes.membership.MemberImpl[tcp://{172, 18, 0, 4}:4000,{172, 18, 0, 4},4000, alive=2536, securePort=-1, UDP Port=-1, id={90 -10 116 -67 -56 -126 67 -127 -107 -64 -50 14 64 -71 81 7 }, payload={}, command={}, domain={}, ]]
+tomcat-node-2    | FINE: Manager [localhost#/session-replication]: start unloading sessions
+tomcat-node-2    | FINE: writeObject() storing session [A97DD384040BD3557F9F17182868A45A.node2]
+tomcat-node-2    | FINE: Manager [localhost#/session-replication]: unloading sessions complete
+tomcat-node-2    | FINE: Manager [localhost#/session-replication] send all session data.
+tomcat-node-1    | FINE: Assuming clocks are synched: Replication for SESSION-STATE-localhost#/session-replication took=13 ms.
+tomcat-node-1    | FINE: Manager [localhost#/session-replication]: Received SessionMessage of type=(ALL-SESSION-DATA) from [org.apache.catalina.tribes.membership.MemberImpl[tcp://{172, 18, 0, 3}:4000,{172, 18, 0, 3},4000, alive=424292, securePort=-1, UDP Port=-1, id={87 34 -54 -91 81 34 69 -16 -90 34 -122 24 84 -84 -128 -48 }, payload={}, command={}, domain={}, ]]
+tomcat-node-1    | FINE: Manager [localhost#/session-replication]: received session state data
+tomcat-node-1    | FINE: readObject() loading session [A97DD384040BD3557F9F17182868A45A.node2]
+tomcat-node-2    | FINE: Manager [localhost#/session-replication] send all session data transfered
+```
+
+#### Step 7
+The same behaviour observer in **Step 4** occurs.
+
+#### Step 8
+Tomcat **A** uses the data that was retrieved from the Cluster on startup and is able to serve requests to Session 
+**S1** with the data updated even it it was down when some requests were processed. 
 
 ## Additional Resources
 
