@@ -66,11 +66,80 @@ Try accessing `http://localhost:8080/` again and the Load Balancer should send t
 
 ## Configuration
 
-### server.xml
+### Tomcat
 
+#### server.xml
 
+In the `Engine` element add the property `jvmRoute`. This needs to be unique for each of the nodes in the cluster and 
+it is used to append a name in the Session Id. This name can later be used by the Load Balancer to determine which node 
+to use and to keep a Sticky Session when proxying a request. The easiest way is to use a property replacement, so then 
+the value can be set using a System Property when starting up the Tomcat instance:
 
-### logging.properties
+```xml
+<Engine name="Catalina" defaultHost="localhost" jvmRoute="${load-balancer.route}">
+```
+
+Then `${load-balancer.route}` can be set into an environment variable `CATALINA_OPTS=-Dload-balancer.route=node1`. 
+Tomcat will automatically read this environment variable and perform property replacement in the `server.xml`.
+
+ 
+
+Add the following XML fragment into `conf/server.xml` inside the `Engine` element:
+
+```xml
+<Cluster className="org.apache.catalina.ha.tcp.SimpleTcpCluster"
+       channelSendOptions="8">
+
+<Manager className="org.apache.catalina.ha.session.DeltaManager"
+         expireSessionsOnShutdown="false"
+         notifyListenersOnReplication="true"/>
+
+<Channel className="org.apache.catalina.tribes.group.GroupChannel">
+  <Membership className="org.apache.catalina.tribes.membership.McastService"
+              address="228.0.0.4"
+              port="45564"
+              frequency="500"
+              dropTime="3000"/>
+  <Receiver className="org.apache.catalina.tribes.transport.nio.NioReceiver"
+            address="auto"
+            port="4000"
+            autoBind="100"
+            selectorTimeout="5000"
+            maxThreads="6"/>
+
+  <Sender className="org.apache.catalina.tribes.transport.ReplicationTransmitter">
+    <Transport className="org.apache.catalina.tribes.transport.nio.PooledParallelSender"/>
+  </Sender>
+  <Interceptor className="org.apache.catalina.tribes.group.interceptors.TcpFailureDetector"/>
+  <Interceptor className="org.apache.catalina.tribes.group.interceptors.MessageDispatch15Interceptor"/>
+</Channel>
+
+<Valve className="org.apache.catalina.ha.tcp.ReplicationValve"
+       filter=""/>
+<Valve className="org.apache.catalina.ha.session.JvmRouteBinderValve"/>
+
+<Deployer className="org.apache.catalina.ha.deploy.FarmWarDeployer"
+          tempDir="/tmp/war-temp/"
+          deployDir="/tmp/war-deploy/"
+          watchDir="/tmp/war-listen/"
+          watchEnabled="false"/>
+
+<ClusterListener className="org.apache.catalina.ha.session.JvmRouteSessionIDBinderListener"/>
+<ClusterListener className="org.apache.catalina.ha.session.ClusterSessionListener"/>
+</Cluster>
+```
+
+Note that the Cluster Membership is done using Multicast in the `Membership` element. In this case, the cluster is 
+using the address `228.0.0.4` on port `45564`. Make sure that all the nodes that you wish to belong to the same cluster 
+use the same configuration and are able to reach each other. When you have different environments on the same network 
+and you want to set different clusters, the address and port should be changed to avoid members joining a cluster that 
+they don't belong.
+
+The membership component broadcasts TCP address/port of itself to the other nodes so that communication between nodes 
+can be done over TCP. This is set up in the `Receiver` element. Make sure that all the nodes that belong to the same 
+cluster are able to reach each other and connect to the `Receiber` port.
+
+#### logging.properties
 
 Add the following lines to `conf/logging.properties` in the Tomcat distribution folder to turn on the logging around 
 Session Replication:
