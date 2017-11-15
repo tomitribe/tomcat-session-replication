@@ -8,6 +8,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.Serializable;
+import java.net.InetAddress;
 
 @WebServlet(name = "replication", urlPatterns = "/")
 public class SessionReplicationServlet extends HttpServlet {
@@ -22,9 +23,14 @@ public class SessionReplicationServlet extends HttpServlet {
         } else {
             session.setAttribute("data", new Data());
         } 
-        
-        resp.getWriter().write(session.getId());
-        resp.getWriter().write("<br>data:" + session.getAttribute("data"));
+
+        resp.getWriter().write("<html>");
+        resp.getWriter().write("<body>");
+        resp.getWriter().write("<br>host: " + InetAddress.getLocalHost().getHostName());
+        resp.getWriter().write("<br>session id: " + session.getId());
+        resp.getWriter().write("<br>data: " + session.getAttribute("data"));
+        resp.getWriter().write("</body>");
+        resp.getWriter().write("</html>");
     }
 
     public static class Data implements Serializable {
