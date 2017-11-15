@@ -1,5 +1,13 @@
 version: '2'
 services:
+    httpd:
+      image: httpd
+      container_name: httpd
+      ports:
+        - 80:80
+      volumes:
+        - ./httpd/httpd.conf:/usr/local/apache2/conf/httpd.conf
+
     tomcat-node-1:
       image: tomcat:7
       container_name: tomcat-node-1
@@ -9,6 +17,8 @@ services:
         - ./tomcat/server.xml:/usr/local/tomcat/conf/server.xml
         - ./tomcat/logging.properties:/usr/local/tomcat/conf/logging.properties
         - ./target/session-replication.war:/usr/local/tomcat/webapps/session-replication.war
+      depends_on:
+        - httpd
 
     tomcat-node-2:
       image: tomcat:7
@@ -19,3 +29,5 @@ services:
         - ./tomcat/server.xml:/usr/local/tomcat/conf/server.xml
         - ./tomcat/logging.properties:/usr/local/tomcat/conf/logging.properties
         - ./target/session-replication.war:/usr/local/tomcat/webapps/session-replication.war
+      depends_on:
+        - httpd
