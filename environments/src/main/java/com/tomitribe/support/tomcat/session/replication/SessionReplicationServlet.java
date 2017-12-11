@@ -1,4 +1,4 @@
-package com.tomitribe.support.tomcat.session.replication;
+package main.java.com.tomitribe.support.tomcat.session.replication;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;

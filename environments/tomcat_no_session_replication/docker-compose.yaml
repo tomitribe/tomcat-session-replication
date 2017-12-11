@@ -1,0 +1,40 @@
+version: '2'
+services:
+    httpd_tomcat_no_replication:
+      image: httpd
+      container_name: httpd_tomcat_no_replication
+      ports:
+        - 80:80
+      volumes:
+        - ../common/httpd.conf:/usr/local/apache2/conf/httpd.conf
+        - ./httpd-load-balancer.conf:/usr/local/apache2/conf/extra/httpd-load-balancer-conf
+
+    tomcat-no-replication-node-1:
+      image: tomcat:7
+      container_name: tomcat-no-replication-node-1
+      hostname: tomcat-no-replication-node-1
+      ports:
+        - 8081:8080
+      volumes:
+        - ./server.xml:/usr/local/tomcat/conf/server.xml
+        - ../common/logging.properties:/usr/local/tomcat/conf/logging.properties
+        - ../target/session-replication.war:/usr/local/tomcat/webapps/session-replication.war
+      environment:
+        - CATALINA_OPTS=-Dload-balancer.route=node1
+      depends_on:
+        - httpd_tomcat_no_replication
+
+    tomcat-no-replication-node-2:
+      image: tomcat:7
+      container_name: tomcat-no-replication-node-2
+      hostname: tomcat-no-replication-node-2
+      ports:
+        - 8082:8080
+      volumes:
+        - ./server.xml:/usr/local/tomcat/conf/server.xml
+        - ../common/logging.properties:/usr/local/tomcat/conf/logging.properties
+        - ../target/session-replication.war:/usr/local/tomcat/webapps/session-replication.war
+      environment:
+        - CATALINA_OPTS=-Dload-balancer.route=node2
+      depends_on:
+        - httpd_tomcat_no_replication
