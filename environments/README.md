@@ -16,11 +16,11 @@ mvn clean install
 
 Then chose which environment you want to execute and enter the folder:
 ```bash
-cd tomcat or
+cd tomcat
 cd tomcat_no_session_replication
-cd tomee or
+cd tomee
 cd tomee_no_session_replication
-```bash
+```
 
 And then:
 
