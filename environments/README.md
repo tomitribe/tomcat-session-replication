@@ -14,7 +14,7 @@ Maven and Docker are required to run the sample. To run it, just go to the proje
 mvn clean install
 ```
 
-Then chose which environment you want to execute and enter the folder:
+Then go to the environment project and choose which environment you want to execute and enter the folder:
 ```bash
 cd tomcat
 cd tomcat_no_session_replication
