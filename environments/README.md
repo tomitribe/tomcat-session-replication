@@ -1,8 +1,8 @@
 # Tomcat Session Replication Sample
 
-This sample showcases the Tomcat / TomEE Session Replication configuration. To simulate a Tomcat / TomEE cluster, this sample uses a
+This sample showcases the Tomcat / TomEE Session Replication configuration. To simulate a server cluster, this sample uses a
 Docker Compose file, with two nodes that deploy a simple application to keep track of the number of times that the 
-SessionReplicationServlet was invoked across all Tomcat / TomEE nodes.
+SessionReplicationServlet was invoked across all server nodes.
 
 Additionally, it also includes an instance of Httpd to Load Balance between both the Tomcat / TomEE nodes.
 
