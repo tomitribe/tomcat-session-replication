@@ -11,6 +11,7 @@
     <modules>
         <module>performance</module>
         <module>environments</module>
+        <module>jakarta</module>
     </modules>
 
     <properties>
