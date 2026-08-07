@@ -126,12 +126,20 @@
         <Valve className="org.apache.catalina.authenticator.SingleSignOn" />
         -->
 
+        <!-- Extract the real client IP and protocol from the httpd load
+             balancer's X-Forwarded-* headers. Must precede the AccessLogValve so
+             %h logs the real client instead of the proxy's address.
+             Documentation at: /docs/config/valve.html -->
+        <Valve className="org.apache.catalina.valves.RemoteIpValve"
+               remoteIpHeader="X-Forwarded-For"
+               protocolHeader="X-Forwarded-Proto" />
+
         <!-- Access log processes all example.
              Documentation at: /docs/config/valve.html
              Note: The pattern used is equivalent to using pattern="common" -->
         <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
                prefix="localhost_access_log." suffix=".txt"
-               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
+               pattern="%h %l %u %t &quot;%r&quot; %s %b %S %{JSESSIONID}c &quot;%{True-Client-IP}i&quot; &quot;%{X-Forwarded-For}i&quot; %{remote}p %D" />
 
       </Host>
     </Engine>
