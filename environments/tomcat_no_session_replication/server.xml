@@ -139,6 +139,7 @@
              Note: The pattern used is equivalent to using pattern="common" -->
         <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
                prefix="localhost_access_log." suffix=".txt"
+               requestAttributesEnabled="true"
                pattern="%h %l %u %t &quot;%r&quot; %s %b %S %{JSESSIONID}c &quot;%{True-Client-IP}i&quot; &quot;%{X-Forwarded-For}i&quot; %{remote}p %D" />
 
       </Host>
