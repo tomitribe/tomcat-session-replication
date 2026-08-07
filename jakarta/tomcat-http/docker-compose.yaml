@@ -10,7 +10,7 @@ services:
         - ./httpd-load-balancer.conf:/usr/local/apache2/conf/extra/httpd-load-balancer-conf
 
     tomcat-node-1:
-      image: tomcat:9
+      image: tomcat:11
       container_name: tomcat-node-1
       hostname: tomcat-node-1
       ports:
@@ -27,7 +27,7 @@ services:
         - httpd_tomcat
 
     tomcat-node-2:
-      image: tomcat:9
+      image: tomcat:11
       container_name: tomcat-node-2
       hostname: tomcat-node-2
       ports:

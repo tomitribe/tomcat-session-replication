@@ -10,7 +10,7 @@ services:
         - ./httpd-load-balancer.conf:/usr/local/apache2/conf/extra/httpd-load-balancer-conf
 
     tomcat-no-replication-node-1:
-      image: tomcat:7
+      image: tomcat:9
       container_name: tomcat-no-replication-node-1
       hostname: tomcat-no-replication-node-1
       ports:
@@ -25,7 +25,7 @@ services:
         - httpd_tomcat_no_replication
 
     tomcat-no-replication-node-2:
-      image: tomcat:7
+      image: tomcat:9
       container_name: tomcat-no-replication-node-2
       hostname: tomcat-no-replication-node-2
       ports:
